@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "lite-server",
-    "dev": "lite-server & tsc --watch src/app.ts --out dist/app.js"
+    "dev": "tsc -w"
   },
   "keywords": [
     "typescript",
