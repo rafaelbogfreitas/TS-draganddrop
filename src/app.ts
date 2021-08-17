@@ -98,29 +98,58 @@ class ProjectState {
 
 const projectState = ProjectState.getInstance();
 
+// Component class
+
+abstract class Component<T extends HTMLElement, U extends HTMLElement> {
+  templateEl: HTMLTemplateElement;
+  hostEl: T;
+  element: U;
+
+  constructor(
+    templateId: string,
+    hostElementId: string,
+    insertAtStart: boolean,
+    newElementId?: string
+  ) {
+    this.templateEl = document.getElementById(
+      templateId
+    )! as HTMLTemplateElement;
+    this.hostEl = document.getElementById(hostElementId)! as T;
+
+    const importNode = document.importNode(this.templateEl.content, true);
+    this.element = importNode.firstElementChild as U;
+    if (newElementId) {
+      this.element.id = newElementId;
+    }
+
+    this.attach(insertAtStart);
+  }
+
+  private attach(insertAtBeggining: boolean) {
+    this.hostEl.insertAdjacentElement(
+      insertAtBeggining ? "afterbegin" : "beforeend",
+      this.element
+    );
+  }
+
+  abstract configure(): void;
+  abstract renderContent(): void;
+
+}
+
 // Project list class
 
-class ProjectList {
-  templateEl: HTMLTemplateElement;
-  hostEl: HTMLDivElement;
-  element: HTMLElement;
+class ProjectList extends Component<HTMLDivElement, HTMLElement>{
   assignedProjects: Project[];
 
   constructor(private type: "active" | "finished") {
-    this.templateEl = document.getElementById(
-      "project-list"
-    )! as HTMLTemplateElement;
-    this.hostEl = document.getElementById("app")! as HTMLDivElement;
-    this.assignedProjects = [];
-
-    const importNode = document.importNode(this.templateEl.content, true);
-    this.element = importNode.firstElementChild as HTMLElement;
-    this.element.id = `${this.type}-projects`;
-
+    super("project-list", "app", false, `${type}-projects`);
+   this.assignedProjects = [];
+   
     projectState.addListener((projects: Project[]) => {
-      const relevantProjects = projects.filter(prj => {
-        if(this.type === 'active') {
-          return prj.status === ProjectStatus.Active
+      const relevantProjects = projects.filter((prj) => {
+        if (this.type === "active") {
+          return prj.status === ProjectStatus.Active;
         }
         return prj.status === ProjectStatus.Inactive;
       });
@@ -128,7 +157,6 @@ class ProjectList {
       this.renderProjects();
     });
 
-    this.attach();
     this.renderContent();
   }
 
@@ -144,16 +172,16 @@ class ProjectList {
     }
   }
 
-  private renderContent() {
+  configure() {
+
+  }
+
+  renderContent() {
     const listId = `${this.type}-project-list`;
     this.element.querySelector("ul")!.id = listId;
     this.element.querySelector(
       "h2"
     )!.textContent = `${this.type.toUpperCase()} PROJECTS`;
-  }
-
-  private attach() {
-    this.hostEl.insertAdjacentElement("beforeend", this.element);
   }
 }
 
